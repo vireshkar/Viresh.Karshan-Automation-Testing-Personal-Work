@@ -18,7 +18,7 @@
     "chai": "^4.3.6",
     "playwright": "^1.49.0",
     "puppeteer-core": "^22.15.0",
-    "webdriverio": "^9.4.1"
+    "webdriverio": "^8.40.6"
   },
   "devDependencies": {
     "@wdio/allure-reporter": "^9.2.14",

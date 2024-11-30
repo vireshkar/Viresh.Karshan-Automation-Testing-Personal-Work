@@ -1,30 +1,49 @@
-const playwright = require('playwright');
+const { chromium } = require('playwright');
 const { expect } = require('@playwright/test');
-const assert = require('assert');
 
 async function main() {
-    const browser = await playwright.chromium.launch({ headless: false });
-    const page = await browser.newPage();
-			
-	await page.goto('https://www.travelstart.co.za/');
-	await page.getByRole('button', { name: 'Yes' }).click();
-	await page.getByLabel('dept_city').fill('Cape Town');
-	await page.getByRole('option', { name: 'Cape Town, International Cape Town, South Africa CPT' }).click();
-	await page.getByRole('option', { name: /London, All Airports London, United Kingdom LON/i }).click();
-	await page.getByLabel('Thursday, December 19,').getByText('19').click();
+    const browser = await chromium.launch({ headless: false });
+    const context = await browser.newContext();
+    const page = await context.newPage();
 
-	await page.getByLabel('arr_date').click();
-	await page.getByLabel('Thursday, January 2,').nth(1).click();
+    try {
+        await page.goto('https://www.travelstart.co.za/');
+        await page.waitForLoadState('load'); // Ensure the page is fully loaded
 
-	await page.getByRole('button', { name: 'Search Flights' }).click();
-	await expect(page.url()).toContain('/results');
-	await page.waitForLoadState();
-	await page.waitForTimeout(3000);
+        await page.click('button:has-text("Yes")');
+        await page.waitForSelector('input[name="dept_city"]', { state: 'visible', timeout: 60000 });
+        await page.fill('input[name="dept_city"]', 'Cape Town'); // Corrected selector for 'From' input field
+        await page.waitForSelector('li:has-text("Cape Town, International Cape Town, South Africa CPT")', { state: 'visible', timeout: 60000 });
+        await page.click('li:has-text("Cape Town, International Cape Town, South Africa CPT")');
+        
+        await page.waitForSelector('input[name="arrival_city"]', { state: 'visible', timeout: 60000 });
+        await page.fill('input[name="arrival_city"]', 'London'); // Corrected selector for 'To' input field
+        await page.waitForSelector('li:has-text(/London, All Airports London, United Kingdom LON/i)', { state: 'visible', timeout: 60000 });
+        await page.click('li:has-text(/London, All Airports London, United Kingdom LON/i)');
+        
+        await page.waitForSelector('td:has-text("19")', { state: 'visible', timeout: 60000 });
+        await page.click('td:has-text("19")');
 
-	const count1 = await page.locator('app-flight-card').count();
-	expect(count1).toBeGreaterThanOrEqual(1);
+        await page.waitForSelector('input[name="arr_date"]', { state: 'visible', timeout: 60000 });
+        await page.click('input[name="arr_date"]');
+        await page.waitForSelector('td:has-text("2")', { state: 'visible', timeout: 60000 });
+        await page.click('td:has-text("2")');
 
-    //await browser.close();
+        await page.waitForSelector('button:has-text("Search Flights")', { state: 'visible', timeout: 60000 });
+        await page.click('button:has-text("Search Flights")');
+        
+        await page.waitForURL('**/results');
+        await page.waitForLoadState();
+        await page.waitForTimeout(3000);
+
+        const count1 = await page.locator('app-flight-card').count();
+        expect(count1).toBeGreaterThanOrEqual(1);
+    } catch (error) {
+        console.error('Error during test execution:', error);
+    } finally {
+        // Ensure that the browser is closed even if an error occurs
+        await browser.close();
+    }
 }
 
 main().catch(console.error);

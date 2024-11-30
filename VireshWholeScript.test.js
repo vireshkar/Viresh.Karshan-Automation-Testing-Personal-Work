@@ -1,52 +1,31 @@
 const playwright = require('playwright');
 const { expect } = require('@playwright/test');
+const assert = require('assert');
 
 async function main() {
-  const browser = await playwright.chromium.launch({ headless: false });  // Set headless to false for visibility
-  const context = await browser.newContext();
-  const page = await context.newPage();
-
-  try {
-    // Navigate to Travelstart website
+    const browser = await playwright.chromium.launch({ headless: false });
+    const page = await browser.newPage();
+            
     await page.goto('https://www.travelstart.co.za/');
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await page.getByLabel('dept_city').fill('Cape Town');
+    await page.getByRole('option', { name: 'Cape Town, International Cape Town, South Africa CPT' }).click();
+    await page.getByRole('option', { name: /London, All Airports London, United Kingdom LON/i }).click();
+    await page.getByLabel('Thursday, December 19,').getByText('19').click();
 
-    // Accept cookies or close any popups
-    await page.locator('button:has-text("Yes")').click();
+    await page.getByLabel('arr_date').click();
+    await page.getByLabel('Thursday, January 2,').nth(1).click();
 
-    // Wait for the departure city input to be visible
-    await page.waitForSelector('input[placeholder="Departure city"]', { state: 'visible', timeout: 60000 });
-    await page.locator('input[placeholder="Departure city"]').fill('Cape Town');
-    await page.locator('input[placeholder="Departure city"]').press('Enter');
+    await page.getByRole('button', { name: 'Search Flights' }).click();
+    await expect(page.url()).toContain('/results');
+    await page.waitForLoadState('networkidle'); // Wait for network to be idle
+    await page.waitForTimeout(3000); // Additional wait
 
-    // Wait and select the destination city
-    await page.waitForSelector('input[placeholder="Destination city"]', { state: 'visible', timeout: 60000 });
-    await page.locator('input[placeholder="Destination city"]').fill('London');
-    await page.locator('input[placeholder="Destination city"]').press('Enter');
-
-    // Wait and select the departure date
-    await page.waitForSelector('input[name="departure_date"]', { state: 'visible', timeout: 60000 });
-    await page.locator('input[name="departure_date"]').fill('2024-12-19');
-    await page.locator('input[name="return_date"]').fill('2025-01-02');
-
-    // Wait for the "Search Flights" button to be clickable and click
-    await page.waitForSelector('button:has-text("Search Flights")', { state: 'visible', timeout: 60000 });
-    await page.locator('button:has-text("Search Flights")').click();
-
-    // Wait for results to load and ensure that flight cards are displayed
-    await page.waitForSelector('app-flight-card', { state: 'visible', timeout: 60000 });
-
-    // Verify that flight results are displayed
+    // Check if the flight results are loaded
     const count1 = await page.locator('app-flight-card').count();
-    console.log(`Flight results count: ${count1}`);
-    expect(count1).toBeGreaterThanOrEqual(1);  // Ensure at least one result is displayed
+    expect(count1).toBeGreaterThanOrEqual(1);
 
-  } catch (error) {
-    console.error('Error during script execution:', error);
-    await page.screenshot({ path: 'error_screenshot.png' });  // Capture screenshot for debugging
-  } finally {
-    // Close the browser after the script finishes
     await browser.close();
-  }
 }
 
-main();
+main().catch(console.error);

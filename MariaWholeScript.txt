@@ -6,7 +6,7 @@ async function main() {
     const browser = await playwright.chromium.launch({ headless: false });
     const page = await browser.newPage();
 			
-	await page.goto('https://www.travelstart.com/');
+	await page.goto('https://www.travelstart.co.za/');
 	await page.getByRole('button', { name: 'Yes' }).click();
 	await page.getByLabel('dept_city').fill('Cape Town');
 	await page.getByRole('option', { name: 'Cape Town, International Cape Town, South Africa CPT' }).click();
